@@ -82,6 +82,8 @@ func (suite *AnteTestSuite) TestAnteHandlerSigErrors() {
 	priv0, _, addr0 := testdata.KeyTestPubAddr()
 	priv1, _, addr1 := testdata.KeyTestPubAddr()
 	priv2, _, addr2 := testdata.KeyTestPubAddr()
+	priv3, _, addr3 := testdata.KeyTestPubAddr()
+	_, _, addr4 := testdata.KeyTestPubAddr()
 	msgs := []sdk.Msg{
 		testdata.NewTestMsg(addr0, addr1),
 		testdata.NewTestMsg(addr0, addr2),
@@ -143,6 +145,41 @@ func (suite *AnteTestSuite) TestAnteHandlerSigErrors() {
 			false,
 			false,
 			sdkerrors.ErrUnknownAddress,
+		},
+		{
+			"provide wrong pubkey for account with changed pubkey",
+			func() {
+				acc3 := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr3)
+				acc3.SetPubKey(priv2.PubKey())
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc3)
+				err := suite.app.BankKeeper.SetBalances(suite.ctx, addr3, feeAmount)
+				suite.Require().NoError(err)
+				msg := testdata.NewTestMsg(addr3)
+				msgs = []sdk.Msg{msg}
+				// we should provide priv2 since we changed pubkey of acc3 to priv2.PubKey()
+				// but since it provide priv3, it should fail for InvalidPubKey
+				privs, accNums, accSeqs = []crypto.PrivKey{priv3}, []uint64{acc3.GetAccountNumber()}, []uint64{0}
+			},
+			false,
+			false,
+			sdkerrors.ErrInvalidPubKey,
+		},
+		{
+			"provide correct pubkey for account with changed pubkey",
+			func() {
+				acc4 := suite.app.AccountKeeper.NewAccountWithAddress(suite.ctx, addr4)
+				acc4.SetPubKey(priv2.PubKey())
+				suite.app.AccountKeeper.SetAccount(suite.ctx, acc4)
+				err := suite.app.BankKeeper.SetBalances(suite.ctx, addr4, feeAmount)
+				suite.Require().NoError(err)
+				msg := testdata.NewTestMsg(addr4)
+				msgs = []sdk.Msg{msg}
+				// we provide priv2 since we changed pubkey of acc4 to priv2.PubKey()
+				privs, accNums, accSeqs = []crypto.PrivKey{priv2}, []uint64{acc4.GetAccountNumber()}, []uint64{0}
+			},
+			false,
+			true,
+			nil,
 		},
 	}
 
@@ -1091,9 +1128,9 @@ func (suite *AnteTestSuite) TestAnteHandlerReCheck() {
 		name   string
 		params types.Params
 	}{
-		{"memo size check", types.NewParams(1, types.DefaultTxSigLimit, types.DefaultTxSizeCostPerByte, types.DefaultSigVerifyCostED25519, types.DefaultSigVerifyCostSecp256k1)},
-		{"txsize check", types.NewParams(types.DefaultMaxMemoCharacters, types.DefaultTxSigLimit, 10000000, types.DefaultSigVerifyCostED25519, types.DefaultSigVerifyCostSecp256k1)},
-		{"sig verify cost check", types.NewParams(types.DefaultMaxMemoCharacters, types.DefaultTxSigLimit, types.DefaultTxSizeCostPerByte, types.DefaultSigVerifyCostED25519, 100000000)},
+		{"memo size check", types.NewParams(1, types.DefaultTxSigLimit, types.DefaultTxSizeCostPerByte, types.DefaultSigVerifyCostED25519, types.DefaultSigVerifyCostSecp256k1, types.DefaultPubKeyChangeCost, types.DefaultEnableChangePubKey)},
+		{"txsize check", types.NewParams(types.DefaultMaxMemoCharacters, types.DefaultTxSigLimit, 10000000, types.DefaultSigVerifyCostED25519, types.DefaultSigVerifyCostSecp256k1, types.DefaultPubKeyChangeCost, types.DefaultEnableChangePubKey)},
+		{"sig verify cost check", types.NewParams(types.DefaultMaxMemoCharacters, types.DefaultTxSigLimit, types.DefaultTxSizeCostPerByte, types.DefaultSigVerifyCostED25519, 100000000, types.DefaultPubKeyChangeCost, types.DefaultEnableChangePubKey)},
 	}
 	for _, tc := range testCases {
 		// set testcase parameters

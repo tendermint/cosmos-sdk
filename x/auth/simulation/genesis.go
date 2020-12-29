@@ -19,6 +19,8 @@ const (
 	TxSizeCostPerByte      = "tx_size_cost_per_byte"
 	SigVerifyCostED25519   = "sig_verify_cost_ed25519"
 	SigVerifyCostSECP256K1 = "sig_verify_cost_secp256k1"
+	PubKeyChangeCost       = "pubkey_change_cost"
+	EnableChangePubKey     = "enable_change_pubkey"
 )
 
 // RandomGenesisAccounts defines the default RandomGenesisAccountsFn used on the SDK.
@@ -87,6 +89,16 @@ func GenSigVerifyCostSECP256K1(r *rand.Rand) uint64 {
 	return uint64(simulation.RandIntBetween(r, 500, 1000))
 }
 
+// GenPubKeyChangeCost randomized PubKeyChangeCost
+func GenPubKeyChangeCost(r *rand.Rand) uint64 {
+	return uint64(simulation.RandIntBetween(r, 2500, 5000))
+}
+
+// GenEnableChangePubKey randomized EnableChangePubKey
+func GenEnableChangePubKey(r *rand.Rand) bool {
+	return true
+}
+
 // RandomizedGenState generates a random GenesisState for auth
 func RandomizedGenState(simState *module.SimulationState, randGenAccountsFn types.RandomGenesisAccountsFn) {
 	var maxMemoChars uint64
@@ -119,8 +131,20 @@ func RandomizedGenState(simState *module.SimulationState, randGenAccountsFn type
 		func(r *rand.Rand) { sigVerifyCostSECP256K1 = GenSigVerifyCostSECP256K1(r) },
 	)
 
+	var pubKeyChangeCost uint64
+	simState.AppParams.GetOrGenerate(
+		simState.Cdc, PubKeyChangeCost, &pubKeyChangeCost, simState.Rand,
+		func(r *rand.Rand) { pubKeyChangeCost = GenPubKeyChangeCost(r) },
+	)
+
+	var enableChangePubKey bool
+	simState.AppParams.GetOrGenerate(
+		simState.Cdc, EnableChangePubKey, &enableChangePubKey, simState.Rand,
+		func(r *rand.Rand) { enableChangePubKey = GenEnableChangePubKey(r) },
+	)
+
 	params := types.NewParams(maxMemoChars, txSigLimit, txSizeCostPerByte,
-		sigVerifyCostED25519, sigVerifyCostSECP256K1)
+		sigVerifyCostED25519, sigVerifyCostSECP256K1, pubKeyChangeCost, enableChangePubKey)
 	genesisAccs := randGenAccountsFn(simState)
 
 	authGenesis := types.NewGenesisState(params, genesisAccs)
