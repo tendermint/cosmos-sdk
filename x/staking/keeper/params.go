@@ -39,6 +39,12 @@ func (k Keeper) BondDenom(ctx sdk.Context) (res string) {
 	return
 }
 
+// EpochInterval - interval in blocks for epochs
+func (k Keeper) EpochInterval(ctx sdk.Context) (res int64) {
+	k.paramstore.Get(ctx, types.KeyEpochInterval, &res)
+	return
+}
+
 // PowerReduction - is the amount of staking tokens required for 1 unit of consensus-engine power
 // governance can update it on a running chain
 func (k Keeper) PowerReduction(ctx sdk.Context) (res sdk.Int) {
@@ -55,6 +61,7 @@ func (k Keeper) GetParams(ctx sdk.Context) types.Params {
 		k.HistoricalEntries(ctx),
 		k.BondDenom(ctx),
 		k.PowerReduction(ctx),
+		k.EpochInterval(ctx),
 	)
 }
 

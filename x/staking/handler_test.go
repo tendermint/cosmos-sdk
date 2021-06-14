@@ -50,6 +50,7 @@ func TestPowerReductionChangeValidatorSetUpdates(t *testing.T) {
 
 	// create validator
 	tstaking.CreateValidatorWithValPower(validatorAddr, PKs[0], initPower, true)
+	app.StakingKeeper.ExecuteEpoch(ctx)
 
 	// must end-block
 	updates, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -58,6 +59,7 @@ func TestPowerReductionChangeValidatorSetUpdates(t *testing.T) {
 
 	// create a second validator keep it bonded
 	tstaking.CreateValidatorWithValPower(validatorAddr3, PKs[2], initPower, true)
+	app.StakingKeeper.ExecuteEpoch(ctx)
 
 	// must end-block
 	updates, err = app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -95,6 +97,7 @@ func TestValidatorByPowerIndex(t *testing.T) {
 
 	// create validator
 	initBond := tstaking.CreateValidatorWithValPower(validatorAddr, PKs[0], initPower, true)
+	app.ExecuteEpoch(ctx)
 
 	// must end-block
 	updates, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -115,6 +118,7 @@ func TestValidatorByPowerIndex(t *testing.T) {
 
 	// create a second validator keep it bonded
 	tstaking.CreateValidatorWithValPower(validatorAddr3, PKs[2], initPower, true)
+	app.ExecuteEpoch(ctx)
 
 	// must end-block
 	updates, err = app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -173,9 +177,11 @@ func TestDuplicatesMsgCreateValidator(t *testing.T) {
 	tstaking := teststaking.NewHelper(t, ctx, app.StakingKeeper)
 
 	valTokens := tstaking.CreateValidatorWithValPower(addr1, pk1, 10, true)
+	app.ExecuteEpoch(ctx)
 	app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 
 	validator := tstaking.CheckValidator(addr1, types.Bonded, false)
+	app.ExecuteEpoch(ctx)
 	assert.Equal(t, addr1.String(), validator.OperatorAddress)
 	consKey, err := validator.TmConsPublicKey()
 	require.NoError(t, err)
@@ -194,6 +200,7 @@ func TestDuplicatesMsgCreateValidator(t *testing.T) {
 
 	// must have different pubkey and operator
 	tstaking.CreateValidator(addr2, pk2, valTokens, true)
+	app.ExecuteEpoch(ctx)
 
 	// must end-block
 	updates, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -269,6 +276,7 @@ func TestLegacyValidatorDelegations(t *testing.T) {
 
 	// create validator
 	bondAmount := tstaking.CreateValidatorWithValPower(valAddr, valConsPubKey, 10, true)
+	app.ExecuteEpoch(ctx)
 
 	// must end-block
 	updates, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -282,6 +290,7 @@ func TestLegacyValidatorDelegations(t *testing.T) {
 
 	// delegate tokens to the validator
 	tstaking.Delegate(delAddr, valAddr, bondAmount)
+	app.ExecuteEpoch(ctx)
 
 	// verify validator bonded shares
 	validator = tstaking.CheckValidator(valAddr, types.Bonded, false)
@@ -311,6 +320,7 @@ func TestLegacyValidatorDelegations(t *testing.T) {
 
 	// verify the validator can still self-delegate
 	tstaking.Delegate(sdk.AccAddress(valAddr), valAddr, bondAmount)
+	app.ExecuteEpoch(ctx)
 
 	// verify validator bonded shares
 	validator, found = app.StakingKeeper.GetValidator(ctx, valAddr)
@@ -323,6 +333,7 @@ func TestLegacyValidatorDelegations(t *testing.T) {
 
 	// verify the validator can now accept delegations
 	tstaking.Delegate(delAddr, valAddr, bondAmount)
+	app.ExecuteEpoch(ctx)
 
 	// verify validator bonded shares
 	validator, found = app.StakingKeeper.GetValidator(ctx, valAddr)
@@ -348,6 +359,7 @@ func TestIncrementsMsgDelegate(t *testing.T) {
 
 	// first create validator
 	bondAmount := tstaking.CreateValidatorWithValPower(validatorAddr, PKs[0], 10, true)
+	app.ExecuteEpoch(ctx)
 
 	// apply TM updates
 	app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -369,6 +381,7 @@ func TestIncrementsMsgDelegate(t *testing.T) {
 		ctx = ctx.WithBlockHeight(i)
 		tstaking.Ctx = ctx
 		tstaking.Delegate(delegatorAddr, validatorAddr, bondAmount)
+		app.ExecuteEpoch(ctx)
 
 		//Check that the accounts and the bond account have the appropriate values
 		validator, found := app.StakingKeeper.GetValidator(ctx, validatorAddr)
@@ -408,6 +421,7 @@ func TestEditValidatorDecreaseMinSelfDelegation(t *testing.T) {
 	msgCreateValidator := tstaking.CreateValidatorMsg(validatorAddr, PKs[0], initBond)
 	msgCreateValidator.MinSelfDelegation = sdk.NewInt(2)
 	tstaking.Handle(msgCreateValidator, true)
+	app.ExecuteEpoch(ctx)
 
 	// must end-block
 	updates, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -424,6 +438,7 @@ func TestEditValidatorDecreaseMinSelfDelegation(t *testing.T) {
 
 	newMinSelfDelegation := sdk.OneInt()
 	msgEditValidator := types.NewMsgEditValidator(validatorAddr, types.Description{}, nil, &newMinSelfDelegation)
+	app.ExecuteEpoch(ctx)
 	tstaking.Handle(msgEditValidator, false)
 }
 
@@ -439,6 +454,7 @@ func TestEditValidatorIncreaseMinSelfDelegationBeyondCurrentBond(t *testing.T) {
 	msgCreateValidator := tstaking.CreateValidatorMsg(validatorAddr, PKs[0], initBond)
 	msgCreateValidator.MinSelfDelegation = sdk.NewInt(2)
 	tstaking.Handle(msgCreateValidator, true)
+	app.ExecuteEpoch(ctx)
 
 	// must end-block
 	updates, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -455,6 +471,7 @@ func TestEditValidatorIncreaseMinSelfDelegationBeyondCurrentBond(t *testing.T) {
 
 	newMinSelfDelegation := initBond.Add(sdk.OneInt())
 	msgEditValidator := types.NewMsgEditValidator(validatorAddr, types.Description{}, nil, &newMinSelfDelegation)
+	app.ExecuteEpoch(ctx)
 	tstaking.Handle(msgEditValidator, false)
 }
 
@@ -474,6 +491,7 @@ func TestIncrementsMsgUnbond(t *testing.T) {
 	amt1 := app.BankKeeper.GetBalance(ctx, delegatorAddr, denom).Amount
 
 	tstaking.Delegate(delegatorAddr, validatorAddr, initBond)
+	app.ExecuteEpoch(ctx)
 
 	// balance should have been subtracted after delegation
 	amt2 := app.BankKeeper.GetBalance(ctx, delegatorAddr, denom).Amount
@@ -495,6 +513,7 @@ func TestIncrementsMsgUnbond(t *testing.T) {
 
 	for i := int64(0); i < numUnbonds; i++ {
 		res := tstaking.Handle(msgUndelegate, true)
+		app.ExecuteEpoch(ctx)
 
 		var resData types.MsgUndelegateResponse
 		err := proto.Unmarshal(res.Data, &resData)
@@ -572,6 +591,7 @@ func TestMultipleMsgCreateValidator(t *testing.T) {
 	amt := app.StakingKeeper.TokensFromConsensusPower(ctx, 10)
 	for i, validatorAddr := range validatorAddrs {
 		tstaking.CreateValidator(validatorAddr, PKs[i], amt, true)
+		app.ExecuteEpoch(ctx)
 		// verify that the account is bonded
 		validators := app.StakingKeeper.GetValidators(ctx, 100)
 		require.Equal(t, (i + 1), len(validators))
@@ -626,16 +646,19 @@ func TestMultipleMsgDelegate(t *testing.T) {
 
 	// first make a validator
 	tstaking.CreateValidator(validatorAddr, PKs[0], sdk.NewInt(amount), true)
+	app.ExecuteEpoch(ctx)
 
 	// delegate multiple parties
 	for _, delegatorAddr := range delegatorAddrs {
 		tstaking.Delegate(delegatorAddr, validatorAddr, sdk.NewInt(10))
+		app.ExecuteEpoch(ctx)
 		tstaking.CheckDelegator(delegatorAddr, validatorAddr, true)
 	}
 
 	// unbond them all
 	for _, delegatorAddr := range delegatorAddrs {
 		res := tstaking.Undelegate(delegatorAddr, validatorAddr, sdk.NewInt(amount), true)
+		app.ExecuteEpoch(ctx)
 
 		var resData types.MsgUndelegateResponse
 		err := proto.Unmarshal(res.Data, &resData)
@@ -661,10 +684,12 @@ func TestJailValidator(t *testing.T) {
 	// create the validator and delegate
 	tstaking.CreateValidator(validatorAddr, PKs[0], sdk.NewInt(amt), true)
 	tstaking.Delegate(delegatorAddr, validatorAddr, sdk.NewInt(amt))
+	app.ExecuteEpoch(ctx)
 
 	// unbond the validators bond portion
 	unamt := sdk.NewInt(amt)
 	res := tstaking.Undelegate(sdk.AccAddress(validatorAddr), validatorAddr, unamt, true)
+	app.ExecuteEpoch(ctx)
 
 	var resData types.MsgUndelegateResponse
 	err := proto.Unmarshal(res.Data, &resData)
@@ -678,6 +703,7 @@ func TestJailValidator(t *testing.T) {
 
 	// test that the delegator can still withdraw their bonds
 	tstaking.Undelegate(delegatorAddr, validatorAddr, unamt, true)
+	app.ExecuteEpoch(ctx)
 
 	err = proto.Unmarshal(res.Data, &resData)
 	require.NoError(t, err)
@@ -754,6 +780,7 @@ func TestUnbondingPeriod(t *testing.T) {
 
 	// begin unbonding
 	tstaking.Undelegate(sdk.AccAddress(validatorAddr), validatorAddr, amt, true)
+	app.ExecuteEpoch(ctx)
 
 	origHeader := ctx.BlockHeader()
 
@@ -785,10 +812,12 @@ func TestUnbondingFromUnbondingValidator(t *testing.T) {
 	// create the validator and delegate
 	tstaking.CreateValidator(validatorAddr, PKs[0], sdk.NewInt(10), true)
 	tstaking.Delegate(delegatorAddr, validatorAddr, sdk.NewInt(10))
+	app.ExecuteEpoch(ctx)
 
 	// unbond the validators bond portion
 	unbondAmt := sdk.NewInt(10)
 	res := tstaking.Undelegate(sdk.AccAddress(validatorAddr), validatorAddr, unbondAmt, true)
+	app.ExecuteEpoch(ctx)
 
 	// change the ctx to Block Time one second before the validator would have unbonded
 	var resData types.MsgUndelegateResponse
@@ -799,9 +828,10 @@ func TestUnbondingFromUnbondingValidator(t *testing.T) {
 
 	// unbond the delegator from the validator
 	res = tstaking.Undelegate(delegatorAddr, validatorAddr, unbondAmt, true)
+	app.ExecuteEpoch(ctx)
 
-	ctx = tstaking.TurnBlockTimeDiff(app.StakingKeeper.UnbondingTime(ctx))
 	tstaking.Ctx = ctx
+	ctx = tstaking.TurnBlockTimeDiff(app.StakingKeeper.UnbondingTime(ctx))
 
 	// Check to make sure that the unbonding delegation is no longer in state
 	// (meaning it was deleted in the above EndBlocker)
@@ -825,18 +855,21 @@ func TestRedelegationPeriod(t *testing.T) {
 
 	// create the validators
 	tstaking.CreateValidator(validatorAddr, PKs[0], sdk.NewInt(10), true)
+	app.ExecuteEpoch(ctx)
 
 	// balance should have been subtracted after creation
 	amt2 := app.BankKeeper.GetBalance(ctx, sdk.AccAddress(validatorAddr), denom).Amount
 	require.Equal(t, amt1.Sub(sdk.NewInt(10)), amt2, "expected coins to be subtracted")
 
 	tstaking.CreateValidator(validatorAddr2, PKs[1], sdk.NewInt(10), true)
+	app.ExecuteEpoch(ctx)
 	bal1 := app.BankKeeper.GetAllBalances(ctx, sdk.AccAddress(validatorAddr))
 
 	// begin redelegate
 	redAmt := sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(10))
 	msgBeginRedelegate := types.NewMsgBeginRedelegate(sdk.AccAddress(validatorAddr), validatorAddr, validatorAddr2, redAmt)
 	tstaking.Handle(msgBeginRedelegate, true)
+	app.ExecuteEpoch(ctx)
 
 	// origin account should not lose tokens as with a regular delegation
 	bal2 := app.BankKeeper.GetAllBalances(ctx, sdk.AccAddress(validatorAddr))
@@ -873,15 +906,18 @@ func TestTransitiveRedelegation(t *testing.T) {
 	tstaking.CreateValidator(val1, PKs[0], sdk.NewInt(10), true)
 	tstaking.CreateValidator(val2, PKs[1], sdk.NewInt(10), true)
 	tstaking.CreateValidator(val3, PKs[2], sdk.NewInt(10), true)
+	app.ExecuteEpoch(ctx)
 
 	// begin redelegate
 	redAmt := sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(10))
 	msgBeginRedelegate := types.NewMsgBeginRedelegate(sdk.AccAddress(val1), val1, val2, redAmt)
 	tstaking.Handle(msgBeginRedelegate, true)
+	app.ExecuteEpoch(ctx)
 
 	// cannot redelegation to next validator while first delegation exists
 	msgBeginRedelegate = types.NewMsgBeginRedelegate(sdk.AccAddress(val1), val2, val3, redAmt)
 	tstaking.Handle(msgBeginRedelegate, false)
+	app.ExecuteEpoch(ctx)
 
 	params := app.StakingKeeper.GetParams(ctx)
 	ctx = ctx.WithBlockTime(blockTime.Add(params.UnbondingTime))
@@ -892,6 +928,7 @@ func TestTransitiveRedelegation(t *testing.T) {
 
 	// now should be able to redelegate from the second validator to the third
 	tstaking.Handle(msgBeginRedelegate, true)
+	app.ExecuteEpoch(ctx)
 }
 
 func TestMultipleRedelegationAtSameTime(t *testing.T) {
@@ -918,6 +955,7 @@ func TestMultipleRedelegationAtSameTime(t *testing.T) {
 	redAmt := sdk.NewCoin(sdk.DefaultBondDenom, valTokens.QuoRaw(2))
 	msgBeginRedelegate := types.NewMsgBeginRedelegate(selfDelAddr, valAddr, valAddr2, redAmt)
 	tstaking.Handle(msgBeginRedelegate, true)
+	app.ExecuteEpoch(ctx)
 
 	// there should only be one entry in the redelegation object
 	rd, found := app.StakingKeeper.GetRedelegation(ctx, selfDelAddr, valAddr, valAddr2)
@@ -926,6 +964,7 @@ func TestMultipleRedelegationAtSameTime(t *testing.T) {
 
 	// start a second redelegation at this same time as the first
 	tstaking.Handle(msgBeginRedelegate, true)
+	app.ExecuteEpoch(ctx)
 
 	// now there should be two entries
 	rd, found = app.StakingKeeper.GetRedelegation(ctx, selfDelAddr, valAddr, valAddr2)
@@ -953,6 +992,7 @@ func TestMultipleRedelegationAtUniqueTimes(t *testing.T) {
 	// create the validators
 	valTokens := tstaking.CreateValidatorWithValPower(valAddr, PKs[0], 10, true)
 	tstaking.CreateValidator(valAddr2, PKs[1], valTokens, true)
+	app.ExecuteEpoch(ctx)
 
 	// end block to bond them
 	staking.EndBlocker(ctx, app.StakingKeeper)
@@ -962,11 +1002,13 @@ func TestMultipleRedelegationAtUniqueTimes(t *testing.T) {
 	redAmt := sdk.NewCoin(sdk.DefaultBondDenom, valTokens.QuoRaw(2))
 	msgBeginRedelegate := types.NewMsgBeginRedelegate(selfDelAddr, valAddr, valAddr2, redAmt)
 	tstaking.Handle(msgBeginRedelegate, true)
+	app.ExecuteEpoch(ctx)
 
 	// move forward in time and start a second redelegation
 	ctx = ctx.WithBlockTime(ctx.BlockHeader().Time.Add(5 * time.Second))
 	tstaking.Ctx = ctx
 	tstaking.Handle(msgBeginRedelegate, true)
+	app.ExecuteEpoch(ctx)
 
 	// now there should be two entries
 	rd, found := app.StakingKeeper.GetRedelegation(ctx, selfDelAddr, valAddr, valAddr2)
@@ -1005,6 +1047,7 @@ func TestMultipleUnbondingDelegationAtSameTime(t *testing.T) {
 	// begin an unbonding delegation
 	selfDelAddr := sdk.AccAddress(valAddr) // (the validator is it's own delegator)
 	tstaking.Undelegate(selfDelAddr, valAddr, valTokens.QuoRaw(2), true)
+	app.ExecuteEpoch(ctx)
 
 	// there should only be one entry in the ubd object
 	ubd, found := app.StakingKeeper.GetUnbondingDelegation(ctx, selfDelAddr, valAddr)
@@ -1013,6 +1056,7 @@ func TestMultipleUnbondingDelegationAtSameTime(t *testing.T) {
 
 	// start a second ubd at this same time as the first
 	tstaking.Undelegate(selfDelAddr, valAddr, valTokens.QuoRaw(2), true)
+	app.ExecuteEpoch(ctx)
 
 	// now there should be two entries
 	ubd, found = app.StakingKeeper.GetUnbondingDelegation(ctx, selfDelAddr, valAddr)
@@ -1045,6 +1089,7 @@ func TestMultipleUnbondingDelegationAtUniqueTimes(t *testing.T) {
 	// begin an unbonding delegation
 	selfDelAddr := sdk.AccAddress(valAddr) // (the validator is it's own delegator)
 	tstaking.Undelegate(selfDelAddr, valAddr, valTokens.QuoRaw(2), true)
+	app.ExecuteEpoch(ctx)
 
 	// there should only be one entry in the ubd object
 	ubd, found := app.StakingKeeper.GetUnbondingDelegation(ctx, selfDelAddr, valAddr)
@@ -1055,6 +1100,7 @@ func TestMultipleUnbondingDelegationAtUniqueTimes(t *testing.T) {
 	ctx = ctx.WithBlockTime(ctx.BlockHeader().Time.Add(5 * time.Second))
 	tstaking.Ctx = ctx
 	tstaking.Undelegate(selfDelAddr, valAddr, valTokens.QuoRaw(2), true)
+	app.ExecuteEpoch(ctx)
 
 	// now there should be two entries
 	ubd, found = app.StakingKeeper.GetUnbondingDelegation(ctx, selfDelAddr, valAddr)
@@ -1088,20 +1134,28 @@ func TestUnbondingWhenExcessValidators(t *testing.T) {
 
 	// add three validators
 	tstaking.CreateValidatorWithValPower(val1, PKs[0], 50, true)
+	app.ExecuteEpoch(ctx)
+
 	// apply TM updates
 	app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 	require.Equal(t, 1, len(app.StakingKeeper.GetLastValidators(ctx)))
 
 	valTokens2 := tstaking.CreateValidatorWithValPower(val2, PKs[1], 30, true)
+	app.ExecuteEpoch(ctx)
+
 	app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 	require.Equal(t, 2, len(app.StakingKeeper.GetLastValidators(ctx)))
 
 	tstaking.CreateValidatorWithValPower(val3, PKs[2], 10, true)
+	app.ExecuteEpoch(ctx)
+
 	app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 	require.Equal(t, 2, len(app.StakingKeeper.GetLastValidators(ctx)))
 
 	// unbond the validator-2
 	tstaking.Undelegate(sdk.AccAddress(val2), val2, valTokens2, true)
+	app.ExecuteEpoch(ctx)
+
 	// apply TM updates
 	app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
 
@@ -1125,6 +1179,7 @@ func TestBondUnbondRedelegateSlashTwice(t *testing.T) {
 
 	// delegate 10 stake
 	tstaking.Delegate(del, valA, valTokens)
+	app.ExecuteEpoch(ctx)
 
 	// apply Tendermint updates
 	updates, err := app.StakingKeeper.ApplyAndReturnValidatorSetUpdates(ctx)
@@ -1143,6 +1198,7 @@ func TestBondUnbondRedelegateSlashTwice(t *testing.T) {
 	redAmt := sdk.NewCoin(sdk.DefaultBondDenom, app.StakingKeeper.TokensFromConsensusPower(ctx, 6))
 	msgBeginRedelegate := types.NewMsgBeginRedelegate(del, valA, valB, redAmt)
 	tstaking.Handle(msgBeginRedelegate, true)
+	app.ExecuteEpoch(ctx)
 
 	// destination delegation should have 6 shares
 	delegation, found := app.StakingKeeper.GetDelegation(ctx, del, valB)
@@ -1250,6 +1306,7 @@ func TestInvalidCoinDenom(t *testing.T) {
 
 	msgUndelegate := types.NewMsgUndelegate(delAddr, valA, invalidCoin)
 	tstaking.Handle(msgUndelegate, false)
+	app.ExecuteEpoch(ctx)
 
 	msgUndelegate = types.NewMsgUndelegate(delAddr, valA, oneCoin)
 	tstaking.Handle(msgUndelegate, true)

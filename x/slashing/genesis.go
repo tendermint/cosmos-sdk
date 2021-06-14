@@ -39,6 +39,12 @@ func InitGenesis(ctx sdk.Context, keeper keeper.Keeper, stakingKeeper types.Stak
 		}
 	}
 
+	epochNumber := stakingKeeper.GetEpochNumber(ctx)
+
+	for _, msg := range data.BufferedMsgs {
+		keeper.RestoreEpochAction(ctx, epochNumber, msg)
+	}
+
 	keeper.SetParams(ctx, data.Params)
 }
 
@@ -65,6 +71,7 @@ func ExportGenesis(ctx sdk.Context, keeper keeper.Keeper) (data *types.GenesisSt
 
 		return false
 	})
+	epochActions := keeper.GetEpochActions(ctx)
 
-	return types.NewGenesisState(params, signingInfos, missedBlocks)
+	return types.NewGenesisState(params, signingInfos, missedBlocks, epochActions)
 }

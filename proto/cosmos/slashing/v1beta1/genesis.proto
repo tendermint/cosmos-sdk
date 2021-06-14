@@ -5,6 +5,7 @@ option go_package = "github.com/cosmos/cosmos-sdk/x/slashing/types";
 
 import "gogoproto/gogo.proto";
 import "cosmos/slashing/v1beta1/slashing.proto";
+import "google/protobuf/any.proto";
 
 // GenesisState defines the slashing module's genesis state.
 message GenesisState {
@@ -20,6 +21,10 @@ message GenesisState {
   // missed blocks.
   repeated ValidatorMissedBlocks missed_blocks = 3
       [(gogoproto.moretags) = "yaml:\"missed_blocks\"", (gogoproto.nullable) = false];
+
+  // buffered_msgs represents messages that are queued for execution at the end
+  // of a staking epoch
+  repeated google.protobuf.Any buffered_msgs = 4;
 }
 
 // SigningInfo stores validator signing info of corresponding address.

@@ -121,12 +121,13 @@ var (
 
 	// module account permissions
 	maccPerms = map[string][]string{
-		authtypes.FeeCollectorName:     nil,
-		distrtypes.ModuleName:          nil,
-		minttypes.ModuleName:           {authtypes.Minter},
-		stakingtypes.BondedPoolName:    {authtypes.Burner, authtypes.Staking},
-		stakingtypes.NotBondedPoolName: {authtypes.Burner, authtypes.Staking},
-		govtypes.ModuleName:            {authtypes.Burner},
+		authtypes.FeeCollectorName:           nil,
+		distrtypes.ModuleName:                nil,
+		minttypes.ModuleName:                 {authtypes.Minter},
+		stakingtypes.BondedPoolName:          {authtypes.Burner, authtypes.Staking},
+		stakingtypes.NotBondedPoolName:       {authtypes.Burner, authtypes.Staking},
+		stakingtypes.EpochDelegationPoolName: {authtypes.Burner, authtypes.Staking},
+		govtypes.ModuleName:                  {authtypes.Burner},
 	}
 )
 
@@ -328,7 +329,10 @@ func NewSimApp(
 		upgradetypes.ModuleName, minttypes.ModuleName, distrtypes.ModuleName, slashingtypes.ModuleName,
 		evidencetypes.ModuleName, stakingtypes.ModuleName,
 	)
-	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, govtypes.ModuleName, stakingtypes.ModuleName)
+
+	// NOTE: slashing module endblocker should run before staking module since MsgUnjail epoch action should run before making
+	// validator set update on staking module
+	app.mm.SetOrderEndBlockers(crisistypes.ModuleName, govtypes.ModuleName, slashingtypes.ModuleName, stakingtypes.ModuleName)
 
 	// NOTE: The genutils module must occur after staking so that pools are
 	// properly initialized with tokens from genesis accounts.
@@ -427,6 +431,13 @@ func (app *SimApp) BeginBlocker(ctx sdk.Context, req abci.RequestBeginBlock) abc
 // EndBlocker application updates every end block
 func (app *SimApp) EndBlocker(ctx sdk.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	return app.mm.EndBlock(ctx, req)
+}
+
+// ExecuteEpoch run epoch execution for testing
+func (app *SimApp) ExecuteEpoch(ctx sdk.Context) {
+	// order should be same as one in SetOrderEndBlockers
+	app.SlashingKeeper.ExecuteEpoch(ctx)
+	app.StakingKeeper.ExecuteEpoch(ctx)
 }
 
 // InitChainer application update at chain initialization
