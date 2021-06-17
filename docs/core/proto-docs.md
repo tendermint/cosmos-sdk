@@ -401,6 +401,10 @@
   
     - [Query](#cosmos.mint.v1beta1.Query)
   
+- [cosmos/orm/testdata/codec.proto](#cosmos/orm/testdata/codec.proto)
+    - [GroupInfo](#cosmos.orm.testdata.GroupInfo)
+    - [GroupMember](#cosmos.orm.testdata.GroupMember)
+  
 - [cosmos/params/v1beta1/params.proto](#cosmos/params/v1beta1/params.proto)
     - [ParamChange](#cosmos.params.v1beta1.ParamChange)
     - [ParameterChangeProposal](#cosmos.params.v1beta1.ParameterChangeProposal)
@@ -5715,6 +5719,56 @@ Query provides defines the gRPC querier service.
 | `Params` | [QueryParamsRequest](#cosmos.mint.v1beta1.QueryParamsRequest) | [QueryParamsResponse](#cosmos.mint.v1beta1.QueryParamsResponse) | Params returns the total set of minting parameters. | GET|/cosmos/mint/v1beta1/params|
 | `Inflation` | [QueryInflationRequest](#cosmos.mint.v1beta1.QueryInflationRequest) | [QueryInflationResponse](#cosmos.mint.v1beta1.QueryInflationResponse) | Inflation returns the current minting inflation value. | GET|/cosmos/mint/v1beta1/inflation|
 | `AnnualProvisions` | [QueryAnnualProvisionsRequest](#cosmos.mint.v1beta1.QueryAnnualProvisionsRequest) | [QueryAnnualProvisionsResponse](#cosmos.mint.v1beta1.QueryAnnualProvisionsResponse) | AnnualProvisions current minting annual provisions value. | GET|/cosmos/mint/v1beta1/annual_provisions|
+
+ <!-- end services -->
+
+
+
+<a name="cosmos/orm/testdata/codec.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## cosmos/orm/testdata/codec.proto
+
+
+
+<a name="cosmos.orm.testdata.GroupInfo"></a>
+
+### GroupInfo
+GroupInfo represents the high-level on-chain information for a group.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `group_id` | [uint64](#uint64) |  |  |
+| `description` | [string](#string) |  |  |
+| `admin` | [bytes](#bytes) |  |  |
+
+
+
+
+
+
+<a name="cosmos.orm.testdata.GroupMember"></a>
+
+### GroupMember
+GroupMember represents the relationship between a group and a member.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `group` | [bytes](#bytes) |  |  |
+| `member` | [bytes](#bytes) |  |  |
+| `weight` | [uint64](#uint64) |  |  |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
 
  <!-- end services -->
 

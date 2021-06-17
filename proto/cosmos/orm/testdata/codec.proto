@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package cosmos.orm.testdata;
+
+import "gogoproto/gogo.proto";
+
+option go_package = "github.com/cosmos/cosmos-sdk/orm/testdata";
+
+// GroupInfo represents the high-level on-chain information for a group.
+message GroupInfo {
+  uint64 group_id = 1;
+  string description = 2;
+  bytes admin = 3 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+}
+
+// GroupMember represents the relationship between a group and a member.
+message GroupMember {
+  bytes group = 1 [ (gogoproto.casttype) =
+                        "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  bytes member = 2 [ (gogoproto.casttype) =
+                         "github.com/cosmos/cosmos-sdk/types.AccAddress" ];
+  uint64 weight = 3;
+}
