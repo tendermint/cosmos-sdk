@@ -586,7 +586,7 @@ func (rs *Store) SetInitialVersion(version int64) error {
 			// If the store is wrapped with an inter-block cache, we must first unwrap
 			// it to get the underlying IAVL store.
 			store = rs.GetCommitKVStore(key)
-			store.(*iavl.Store).SetInitialVersion(version)
+			store.(types.StoreWithInitialVersion).SetInitialVersion(version)
 		}
 	}
 
@@ -880,7 +880,7 @@ func (rs *Store) loadCommitStoreFromParams(key types.StoreKey, id types.CommitID
 		return store, err
 
 	case types.StoreTypeDB:
-		return commitDBStoreAdapter{Store: dbadapter.Store{DB: db}}, nil
+		return commitDBStoreAdapter{Store: dbadapter.NewStore(db)}, nil
 
 	case types.StoreTypeTransient:
 		_, ok := key.(*types.TransientStoreKey)
