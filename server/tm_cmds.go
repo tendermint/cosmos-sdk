@@ -3,13 +3,13 @@ package server
 // DONTCOVER
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
 	tcmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	"github.com/tendermint/tendermint/libs/cli"
-	"github.com/tendermint/tendermint/p2p"
 	pvm "github.com/tendermint/tendermint/privval"
 	tversion "github.com/tendermint/tendermint/version"
 	yaml "gopkg.in/yaml.v2"
@@ -28,12 +28,12 @@ func ShowNodeIDCmd() *cobra.Command {
 			serverCtx := GetServerContextFromCmd(cmd)
 			cfg := serverCtx.Config
 
-			nodeKey, err := p2p.LoadNodeKey(cfg.NodeKeyFile())
+			nodeKeyID, err := cfg.LoadNodeKeyID()
 			if err != nil {
 				return err
 			}
 
-			fmt.Println(nodeKey.ID())
+			fmt.Println(nodeKeyID)
 			return nil
 		},
 	}
@@ -48,8 +48,11 @@ func ShowValidatorCmd() *cobra.Command {
 			serverCtx := GetServerContextFromCmd(cmd)
 			cfg := serverCtx.Config
 
-			privValidator := pvm.LoadFilePV(cfg.PrivValidatorKeyFile(), cfg.PrivValidatorStateFile())
-			valPubKey, err := privValidator.GetPubKey()
+			privValidator, err := pvm.LoadFilePV(cfg.PrivValidator.KeyFile(), cfg.PrivValidator.StateFile())
+			if err != nil {
+				return err
+			}
+			valPubKey, err := privValidator.GetPubKey(context.TODO())
 			if err != nil {
 				return err
 			}
@@ -86,7 +89,10 @@ func ShowAddressCmd() *cobra.Command {
 			serverCtx := GetServerContextFromCmd(cmd)
 			cfg := serverCtx.Config
 
-			privValidator := pvm.LoadFilePV(cfg.PrivValidatorKeyFile(), cfg.PrivValidatorStateFile())
+			privValidator, err := pvm.LoadFilePV(cfg.PrivValidator.Key, cfg.PrivValidator.State)
+			if err != nil {
+				return err
+			}
 			valConsAddr := (sdk.ConsAddress)(privValidator.GetAddress())
 
 			output, _ := cmd.Flags().GetString(cli.OutputFlag)
@@ -118,7 +124,7 @@ against which this app has been compiled.
 				BlockProtocol uint64
 				P2PProtocol   uint64
 			}{
-				Tendermint:    tversion.TMCoreSemVer,
+				Tendermint:    tversion.TMVersion,
 				ABCI:          tversion.ABCIVersion,
 				BlockProtocol: tversion.BlockProtocol,
 				P2PProtocol:   tversion.P2PProtocol,
@@ -155,7 +161,7 @@ func UnsafeResetAllCmd() *cobra.Command {
 			serverCtx := GetServerContextFromCmd(cmd)
 			cfg := serverCtx.Config
 
-			tcmd.ResetAll(cfg.DBDir(), cfg.P2P.AddrBookFile(), cfg.PrivValidatorKeyFile(), cfg.PrivValidatorStateFile(), serverCtx.Logger)
+			tcmd.ResetAll(cfg.DBDir(), cfg.P2P.AddrBookFile(), cfg.PrivValidator.Key, cfg.PrivValidator.State, serverCtx.Logger)
 			return nil
 		},
 	}

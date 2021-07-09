@@ -135,7 +135,7 @@ func InterceptConfigsPreRunHandler(cmd *cobra.Command) error {
 	}
 
 	var logWriter io.Writer
-	if strings.ToLower(serverCtx.Viper.GetString(flags.FlagLogFormat)) == tmcfg.LogFormatPlain {
+	if strings.ToLower(serverCtx.Viper.GetString(flags.FlagLogFormat)) == "plain" {
 		logWriter = zerolog.ConsoleWriter{Out: os.Stderr}
 	} else {
 		logWriter = os.Stderr
@@ -187,7 +187,6 @@ func interceptConfigs(rootViper *viper.Viper) (*tmcfg.Config, error) {
 	tmCfgFile := filepath.Join(configPath, "config.toml")
 
 	conf := tmcfg.DefaultConfig()
-
 	switch _, err := os.Stat(tmCfgFile); {
 	case os.IsNotExist(err):
 		tmcfg.EnsureRoot(rootDir)
@@ -200,7 +199,7 @@ func interceptConfigs(rootViper *viper.Viper) (*tmcfg.Config, error) {
 		conf.P2P.RecvRate = 5120000
 		conf.P2P.SendRate = 5120000
 		conf.Consensus.TimeoutCommit = 5 * time.Second
-		tmcfg.WriteConfigFile(tmCfgFile, conf)
+		tmcfg.WriteConfigFile(rootDir, conf)
 
 	case err != nil:
 		return nil, err
